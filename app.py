@@ -153,110 +153,101 @@ def validate_records(data):
 
 
 def main():
-    st.set_page_config(page_title='우리 가족 네일', page_icon='💅', layout='centered')
+    st.set_page_config(page_title='우리 가족 네일',page_icon='💅',layout='wide')
     st.markdown('''<style>
-    .stApp{background:linear-gradient(135deg,#fff5fa,#f1eaff);color:#493356;color-scheme:light;}
-    .block-container{max-width:760px;padding-top:4.5rem;padding-bottom:3rem;}
-    h1{font-size:clamp(1.45rem,5vw,2rem)!important;line-height:1.5!important;overflow:visible!important;white-space:normal!important;}
-    h1,h2,h3,p,label{color:#493356!important;}
-    .stButton button,.stDownloadButton button{min-height:48px;height:auto!important;padding:10px 8px!important;border-radius:15px;border:1px solid #b58ac8;}
-    .stButton button p,.stDownloadButton button p{white-space:normal!important;overflow:visible!important;line-height:1.5!important;}
-    button[kind="primary"]{background:#e9cced!important;border:2px solid #80538f!important;}
-    input,textarea{background:#fff!important;color:#493356!important;-webkit-text-fill-color:#493356!important;}
-    </style>''', unsafe_allow_html=True)
-    defaults={'family_records':[], 'edit_name':'', 'shape':'둥근형','shape_note':'', 'color_text':'밀키 핑크','pattern_text':'하트','memo':''}
-    for k,v in defaults.items():
-        if k not in st.session_state: st.session_state[k]=v
+    .stApp{background:#faf2ff;color:#392541;color-scheme:light;}
+    .block-container{max-width:1150px;padding-top:3.5rem;padding-bottom:1rem;}
+    h1{font-size:1.65rem!important;line-height:1.5!important;white-space:normal!important;}
+    h1,h2,h3,p,label{color:#392541!important;}
+    div.stButton>button,div.stDownloadButton>button,button[kind="secondary"],button[kind="primary"]{
+      background:#fff!important;color:#392541!important;border:1px solid #9d73ad!important;
+      border-radius:12px!important;min-height:40px;height:auto!important;padding:7px 9px!important;}
+    div.stButton>button *,div.stDownloadButton>button *{color:#392541!important;white-space:normal!important;line-height:1.4!important;}
+    div.stButton>button[kind="primary"]{background:#e8c6ed!important;border:2px solid #79508b!important;}
+    div.stButton>button:hover,div.stDownloadButton>button:hover{background:#f0ddf6!important;}
+    input,textarea,[data-baseweb="select"]>div{background:#fff!important;color:#392541!important;-webkit-text-fill-color:#392541!important;}
+    [data-testid="stSelectbox"] span{color:#392541!important;}
+    [data-testid="stVerticalBlock"]{gap:.55rem;}
+    @media(max-width:700px){.block-container{padding-top:3rem;padding-left:1rem;padding-right:1rem;}}
+    </style>''',unsafe_allow_html=True)
+    defaults={'family_records':[],'name':'','shape_compact':'둥근형','color_compact':'밀키 핑크','pattern_compact':'하트','note_compact':''}
+    for key,value in defaults.items():
+        if key not in st.session_state:st.session_state[key]=value
     st.title('💅 우리 가족 네일')
-    st.text_input('가족 이름', key='edit_name', placeholder='예: 엄마', max_chars=40)
-    st.selectbox('손톱 형태', SHAPES, key='shape')
-    if st.session_state.shape=='직접 입력':
-        st.text_input('형태 직접 입력', key='shape_note', max_chars=80)
-    st.markdown('**색 고르기**')
-    colors=list(PALETTE)
-    for start in range(0,len(colors),3):
-        for col,name in zip(st.columns(3),colors[start:start+3]):
-            col.button(name,key='color_'+name,on_click=set_choice,args=('color_text',name),use_container_width=True,
-                       type='primary' if st.session_state.color_text==name else 'secondary')
-    st.text_input('색 직접 입력',key='color_text',placeholder='예: 빨강 / red / #FF99CC',max_chars=60)
-    chosen=st.color_picker('색상표에서 선택', key='picker', value='#F4B8CB')
-    st.button('이 색 적용',on_click=set_choice,args=('color_text',chosen),use_container_width=True)
-    st.markdown('**그림 고르기**')
-    for start in range(0,len(PATTERNS),2):
-        for col,name in zip(st.columns(2),PATTERNS[start:start+2]):
-            col.button(name,key='pattern_'+name,on_click=set_choice,args=('pattern_text',name),use_container_width=True,
-                       type='primary' if st.session_state.pattern_text==name else 'secondary')
-    st.text_input('그림 직접 입력',key='pattern_text',placeholder='예: 별 / 나비 / 곰돌이',max_chars=80)
-    pattern=st.session_state.pattern_text.strip()
-    shape=st.session_state.shape_note.strip() if st.session_state.shape=='직접 입력' else st.session_state.shape
-    try:
-        rgb=pick_color(st.session_state.color_text)
-        image=preview(rgb,pattern,shape)
-        st.image(image,use_container_width=True)
-        if pattern not in PATTERNS:
-            st.caption('직접 입력한 그림은 취향으로 기록돼요. 미리보기에는 색만 표시해요.')
-        if shape in ('타원형','아몬드형') or st.session_state.shape=='직접 입력':
-            st.caption('손톱 형태는 참고용 그림이에요. 아몬드형은 타원으로 표시해요.')
-        st.download_button('📥 디자인 저장',png_bytes(image),'nail.png','image/png',use_container_width=True)
-        valid_color=True
-    except (ValueError,TypeError):
-        st.warning('색 이름 또는 #FF99CC 같은 색상 코드를 입력해주세요.')
-        valid_color=False
-    st.text_input('취향 메모',key='memo',placeholder='예: 짧은 손톱, 반짝이는 디자인 선호',max_chars=300)
-    if st.button('💾 가족 기록 저장',type='primary',use_container_width=True,disabled=not valid_color):
-        name=st.session_state.edit_name.strip()
-        if not name or not shape or not pattern:
-            st.warning('이름·손톱 형태·그림을 입력해주세요. 그림이 없으면 ‘없음’을 선택하세요.')
+    def load_record():
+        name=st.session_state.member
+        if name=='＋ 새 가족':
+            for key,value in [('name',''),('shape_compact','둥근형'),('color_compact','밀키 핑크'),('pattern_compact','하트'),('note_compact','')]:
+                st.session_state[key]=value
         else:
-            row={'이름':name,'손톱 형태':shape,'색상':st.session_state.color_text.strip(),'그림':pattern,'메모':st.session_state.memo.strip()}
-            records=st.session_state.family_records
-            if len(records)>=100 and name not in [r['이름'] for r in records]:
-                st.warning('최대 100명까지 기록할 수 있어요.')
-            else:
-                st.session_state.family_records=[r for r in records if r['이름']!=name]+[row]
-                st.success('저장했어요. 같은 이름은 기존 기록을 수정해요.')
-    st.markdown('**우리 가족 기록**')
-    records=st.session_state.family_records
-    if records:
-        st.dataframe(records,hide_index=True,use_container_width=True)
-        selected=st.selectbox('수정할 가족', [r['이름'] for r in records])
-        def load_member():
-            row=next(r for r in st.session_state.family_records if r['이름']==selected)
-            for key,field in [('edit_name','이름'),('color_text','색상'),('pattern_text','그림'),('memo','메모')]:
+            row=next(r for r in st.session_state.family_records if r['이름']==name)
+            for key,field in [('name','이름'),('shape_compact','손톱 형태'),('color_compact','색상'),('pattern_compact','그림'),('note_compact','메모')]:
                 st.session_state[key]=row[field]
-            st.session_state.shape=row['손톱 형태'] if row['손톱 형태'] in SHAPES[:-1] else '직접 입력'
-            st.session_state.shape_note=row['손톱 형태']
-        st.button('✏️ 기록 불러와 수정',on_click=load_member,use_container_width=True)
-        payload=json.dumps(records,ensure_ascii=False,indent=2).encode('utf-8')
-        st.download_button('📥 가족 기록 파일 저장',payload,'family_nails.json','application/json',use_container_width=True)
-    else:
-        st.caption('아직 기록이 없어요.')
-    st.caption('기록은 현재 접속 중에만 유지돼요. 종료 전 파일로 저장해주세요. 다른 휴대폰과 자동 공유되지 않아요.')
-    with st.expander('📂 저장한 기록 불러오기'):
-        uploaded=st.file_uploader('가족 기록 JSON',type=['json'])
-        if st.button('기록 합치기',disabled=uploaded is None,use_container_width=True):
-            try:
-                if uploaded.size>1_000_000: raise ValueError('1MB 이하 파일만 가능해요.')
-                rows=validate_records(json.loads(uploaded.getvalue().decode('utf-8-sig')))
-                combined={r['이름']:r for r in st.session_state.family_records}
-                combined.update({r['이름']:r for r in rows})
-                if len(combined)>100: raise ValueError('최대 100명까지 가능해요.')
-                st.session_state.family_records=list(combined.values())
+    left,right=st.columns([1.1,1],gap='large')
+    with left:
+        a,b=st.columns(2)
+        a.selectbox('가족 선택',['＋ 새 가족']+[r['이름'] for r in st.session_state.family_records],key='member',on_change=load_record)
+        b.text_input('이름',key='name',max_chars=40,placeholder='엄마')
+        shape_options=SHAPES[:-1]
+        if st.session_state.shape_compact not in shape_options:shape_options=shape_options+[st.session_state.shape_compact]
+        st.selectbox('손톱 형태',shape_options,key='shape_compact')
+        st.caption('색·그림은 목록에서 고르거나 새 값을 입력하세요.')
+        color_options=list(PALETTE)
+        if st.session_state.color_compact not in color_options:color_options.append(st.session_state.color_compact)
+        st.selectbox('색 (예: 빨강, #FF99CC)',color_options,key='color_compact',accept_new_options=True)
+        pattern_options=PATTERNS.copy()
+        if st.session_state.pattern_compact not in pattern_options:pattern_options.append(st.session_state.pattern_compact)
+        st.selectbox('그림 (직접 입력 가능)',pattern_options,key='pattern_compact',accept_new_options=True)
+        st.text_input('메모',key='note_compact',max_chars=300,placeholder='짧은 손톱 / 반짝이 선호')
+    with right:
+        valid=False
+        try:
+            rgb=pick_color(st.session_state.color_compact)
+            image=preview(rgb,st.session_state.pattern_compact,st.session_state.shape_compact)
+            st.image(image,use_container_width=True)
+            valid=True
+        except (ValueError,TypeError):st.warning('색 이름이나 #FF99CC 형식으로 입력해주세요.')
+        if st.session_state.pattern_compact not in PATTERNS:st.caption('직접 입력한 그림은 기록만 해요. 미리보기는 색만 표시해요.')
+        if st.button('💾 가족 기록 저장',type='primary',use_container_width=True,disabled=not valid):
+            name=st.session_state.name.strip()
+            if not name or name=='＋ 새 가족':st.warning('가족 이름을 입력해주세요.')
+            elif len(st.session_state.family_records)>=100 and name not in [r['이름'] for r in st.session_state.family_records]:st.warning('최대 100명까지 저장할 수 있어요.')
+            else:
+                row={'이름':name,'손톱 형태':st.session_state.shape_compact,'색상':st.session_state.color_compact,'그림':st.session_state.pattern_compact,'메모':st.session_state.note_compact}
+                st.session_state.family_records=[r for r in st.session_state.family_records if r['이름']!=name]+[row]
                 st.rerun()
-            except (ValueError,TypeError,UnicodeError,KeyError) as exc:
-                st.error(str(exc))
-        st.caption('같은 이름은 파일 속 기록으로 바뀌어요.')
-    with st.expander('📱 앱 QR 만들기'):
-        url=st.text_input('배포 주소',placeholder='https://your-app.streamlit.app').strip()
+        if valid:st.download_button('🖼 디자인 저장',png_bytes(image),'nail.png','image/png',use_container_width=True)
+        if st.session_state.family_records:
+            st.download_button('📥 가족 기록 저장',json.dumps(st.session_state.family_records,ensure_ascii=False,indent=2).encode('utf-8'),'family_nails.json','application/json',use_container_width=True)
+        st.caption('종료 전 기록 파일을 저장하세요. 자동 영구 저장은 되지 않아요.')
+    if st.session_state.family_records:
+        st.dataframe(st.session_state.family_records,hide_index=True,use_container_width=True,height=145)
+    # 보조 기능은 같은 화면의 작은 팝오버로 제공합니다.
+    a,b=st.columns(2)
+    with a.popover('📂 기록 불러오기',use_container_width=True):
+        uploaded=st.file_uploader('기록 파일',type=['json'])
+        if st.button('불러오기',disabled=uploaded is None):
+            try:
+                if uploaded.size>1_000_000:raise ValueError('1MB 이하 파일을 선택해주세요.')
+                rows=validate_records(json.loads(uploaded.getvalue().decode('utf-8-sig')))
+                merged={r['이름']:r for r in st.session_state.family_records}
+                merged.update({r['이름']:r for r in rows})
+                if len(merged)>100:raise ValueError('최대 100명까지 가능해요.')
+                st.session_state.family_records=list(merged.values())
+                st.rerun()
+            except (ValueError,TypeError,UnicodeError) as exc:st.error(str(exc))
+        st.caption('같은 이름은 파일의 기록으로 바뀝니다.')
+    with b.popover('📱 QR 공유',use_container_width=True):
+        url=st.text_input('앱 배포 주소',placeholder='https://your-app.streamlit.app').strip()
         if url:
-            try: valid=len(url)<=1500 and valid_public_url(url)
-            except ValueError: valid=False
-            if valid:
+            try:ok=len(url)<=1500 and valid_public_url(url)
+            except ValueError:ok=False
+            if ok:
                 qr=qrcode.make(url).convert('RGB')
-                st.image(qr,width=220)
+                st.image(qr,width=180)
                 st.download_button('QR 저장',png_bytes(qr),'nail_qr.png','image/png')
-                st.caption('앱 접속용 QR이에요. 가족 기록은 포함되지 않아요.')
-            else: st.warning('공개 HTTPS 주소를 입력해주세요.')
+                st.caption('앱 접속용이며 가족 기록은 포함되지 않아요.')
+            else:st.warning('공개 HTTPS 주소를 넣어주세요.')
 
 
 if __name__=='__main__':
